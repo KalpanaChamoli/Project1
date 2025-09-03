@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -9,64 +10,81 @@ import {
   Calendar,
   TrendingUp,
   Clock,
-  CheckCircle,
-  XCircle 
+  CheckCircle
 } from 'lucide-react';
-import { mockEmployees, mockAttendance, mockLeaveApplications, mockTasks } from '@/lib/data';
+import { baseURL } from '@/lib/utils';
 
 export default function AdminDashboard() {
-  // Calculate statistics from mock data
-  const totalEmployees = mockEmployees.length;
-  const activeEmployees = mockEmployees.filter(emp => emp.status === 'active').length;
-  
-  const today = new Date().toISOString().split('T')[0];
-  const todayAttendance = mockAttendance.filter(record => record.date === today);
-  const presentToday = todayAttendance.filter(record => record.status === 'present' || record.status === 'late').length;
-  const absentToday = todayAttendance.filter(record => record.status === 'absent').length;
-  
-  const pendingLeaves = mockLeaveApplications.filter(leave => leave.status === 'pending').length;
-  const completedTasks = mockTasks.filter(task => task.status === 'completed').length;
-  const pendingTasks = mockTasks.filter(task => task.status === 'pending').length;
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        const res = await fetch(`${baseURL}api/dashboard/admin`, {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed: ${res.status}`);
+        }
+
+        const json = await res.json();
+        setData(json);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboard();
+  }, []);
+
+  if (loading) return <p className="p-6">Loading dashboard...</p>;
+  if (error) return <p className="p-6 text-red-600">Error: {error}</p>;
+
+  // Destructure API response
+  const { totalProjects, totalClients, totalBudget, statusStats, recentProjects } = data;
 
   const stats = [
     {
-      title: 'Total Employees',
-      value: totalEmployees,
+      title: 'Total Projects',
+      value: totalProjects,
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
     {
-      title: 'Present Today',
-      value: presentToday,
+      title: 'Total Clients',
+      value: totalClients,
       icon: UserCheck,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
-      title: 'Absent Today',
-      value: absentToday,
+      title: 'Total Budget',
+      value: `$${totalBudget}`,
       icon: UserX,
       color: 'text-red-600',
       bgColor: 'bg-red-100',
     },
     {
-      title: 'Pending Leaves',
-      value: pendingLeaves,
+      title: 'In Progress',
+      value: statusStats?.find((s: any) => s._id === 'in progress')?.count || 0,
       icon: Calendar,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100',
     },
   ];
 
-  const recentLeaves = mockLeaveApplications.slice(0, 5);
-  const recentTasks = mockTasks.slice(0, 5);
-
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's an overview of your organization.</p>
+        <p className="text-gray-600">Welcome back! Here’s your system overview.</p>
       </div>
 
       {/* Stats Cards */}
@@ -91,121 +109,32 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Leave Applications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              Recent Leave Applications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentLeaves.map((leave) => (
-                <div key={leave.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{leave.employeeName}</p>
-                    <p className="text-sm text-gray-600">
-                      {leave.type} • {leave.days} days
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {leave.startDate} to {leave.endDate}
-                    </p>
-                  </div>
-                  <Badge 
-                    variant={
-                      leave.status === 'approved' ? 'default' : 
-                      leave.status === 'rejected' ? 'destructive' : 'secondary'
-                    }
-                  >
-                    {leave.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Task Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <CheckCircle className="mr-2 h-5 w-5" />
-              Task Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                    <div>
-                      <p className="text-sm text-green-600">Completed</p>
-                      <p className="text-2xl font-bold text-green-700">{completedTasks}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-yellow-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Clock className="h-5 w-5 text-yellow-600 mr-2" />
-                    <div>
-                      <p className="text-sm text-yellow-600">Pending</p>
-                      <p className="text-2xl font-bold text-yellow-700">{pendingTasks}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {recentTasks.slice(0, 3).map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{task.title}</p>
-                      <p className="text-xs text-gray-500">{task.employeeName}</p>
-                    </div>
-                    <Badge 
-                      variant={
-                        task.status === 'completed' ? 'default' : 
-                        task.status === 'in-progress' ? 'secondary' : 'outline'
-                      }
-                    >
-                      {task.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
+      {/* Recent Projects */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <TrendingUp className="mr-2 h-5 w-5" />
-            Quick Stats
+            <CheckCircle className="mr-2 h-5 w-5" />
+            Recent Projects
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">{activeEmployees}</div>
-              <div className="text-sm text-gray-600">Active Employees</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">
-                {Math.round((presentToday / totalEmployees) * 100)}%
+          <div className="space-y-4">
+            {recentProjects?.map((project: any) => (
+              <div key={project._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex-1">
+                  <p className="font-medium">{project.title}</p>
+                  <p className="text-sm text-gray-600">{project.description}</p>
+                  <p className="text-xs text-gray-500">
+                    Client: {project.client?.name} • Lead: {project.projectLead?.name}
+                  </p>
+                </div>
+                <Badge 
+                  variant={project.status === 'in progress' ? 'secondary' : 'default'}
+                >
+                  {project.status}
+                </Badge>
               </div>
-              <div className="text-sm text-gray-600">Attendance Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600">
-                {Math.round((completedTasks / mockTasks.length) * 100)}%
-              </div>
-              <div className="text-sm text-gray-600">Task Completion</div>
-            </div>
+            ))}
           </div>
         </CardContent>
       </Card>

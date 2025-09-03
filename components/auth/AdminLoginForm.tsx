@@ -1,36 +1,62 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Shield } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios"; // ✅ import axios
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { baseURL } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, Shield } from "lucide-react";
 
 export function AdminLoginForm() {
-  const [email, setEmail] = useState('admin@company.com');
-  const [password, setPassword] = useState('admin123');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
+    setSuccess("");
     setIsLoading(true);
 
     try {
-      const success = await login(email, password, 'admin');
-      if (success) {
-        router.push('/admin');
-      } else {
-        setError('Invalid admin credentials');
-      }
-    } catch (err) {
-      setError('Login failed. Please try again.');
+      const res = await axios.post(
+        `${baseURL}api/auth/login`,
+        { email, password },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const data = res.data;
+
+      // ✅ Save JWT securely for later API calls
+      localStorage.setItem("admin-token", data.token);
+
+      // ✅ Store user info
+      setUser(data.user);
+      setSuccess(data.message);
+
+      // ✅ Redirect after login
+      setTimeout(() => {
+        router.push("/admin/attendance");
+      }, 1000);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || err.message || "Login failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -55,19 +81,25 @@ export function AdminLoginForm() {
               <span className="text-sm">{error}</span>
             </div>
           )}
-          
+
+          {success && user && (
+            <div className="p-3 rounded-md bg-green-50 text-green-700 text-sm space-y-1">
+              <p>{success}</p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="admin@company.com"
+              placeholder="admin@myorg.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -79,15 +111,10 @@ export function AdminLoginForm() {
               required
             />
           </div>
-          
+
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? "Signing in..." : "Sign In"}
           </Button>
-          
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Email: admin@company.com | Password: admin123</p>
-          </div>
         </form>
       </CardContent>
     </Card>
