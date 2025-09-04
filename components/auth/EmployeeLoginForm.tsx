@@ -1,37 +1,61 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, User } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, User } from "lucide-react";
+import { baseURL } from "@/lib/utils";
 
 export function EmployeeLoginForm() {
-  const [email, setEmail] = useState('john.doe@company.com');
-  const [password, setPassword] = useState('employee123');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
-      const success = await login(email, password, 'employee');
-      if (success) {
-        router.push('/employee');
-      } else {
-        setError('Invalid employee credentials');
-      }
-    } catch (err) {
-      setError('Login failed. Please try again.');
+      const response = await axios.post(
+        `${baseURL}api/auth/login`, // 👈 your backend URL
+        { email, password },
+        {
+          
+            headers: { "Content-Type": "application/json" },
+          
+        }
+      );
+       const data = response.data;
+
+       localStorage.setItem("employee-token", data.token);
+
+       setUser(data.user); 
+      setSuccess(data.message); 
+
+       setTimeout(() => {
+        router.push("/employee");
+      }, 1000);
+    
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || err.message || "Login failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +80,7 @@ export function EmployeeLoginForm() {
               <span className="text-sm">{error}</span>
             </div>
           )}
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -68,7 +92,7 @@ export function EmployeeLoginForm() {
               required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -80,23 +104,18 @@ export function EmployeeLoginForm() {
               required
             />
           </div>
-          
+
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? "Signing in..." : "Sign In"}
           </Button>
-          
+
           <div className="text-center">
             <Link
               href="/register/employee"
               className="text-sm text-primary hover:underline"
             >
-              Don't have an account? Register here
+              Dont have an account? Register here
             </Link>
-          </div>
-          
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Email: john.doe@company.com | Password: employee123</p>
           </div>
         </form>
       </CardContent>
