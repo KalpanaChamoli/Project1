@@ -1,8 +1,8 @@
 'use client';
 
-import { RouteGuard } from '@/components/guards/RouteGuard';
-import { Navbar } from '@/components/layout/Navbar';
-import { EmployeeSidebar } from '@/components/layout/EmployeeSidebar';
+import RouteGuard from '@/components/guards/RouteGuard';
+import Navbar from '@/components/layout/Navbar';
+import EmployeeSidebar from '@/components/layout/EmployeeSidebar';
 
 export default function EmployeeLayout({
   children,

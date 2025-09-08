@@ -38,10 +38,10 @@ export default function LoginPage() {
     localStorage.setItem("role", role);
 
       // Redirect
-      if (role === "admin") {
-      router.push("/admin");
+     if (role === "admin") {
+      router.push("/admin/admindashboard");
     } else if (role === "employee") {
-      router.push("/employee");
+      router.push("/employee/employeedashboard");
     } else {
       setError("Unauthorized role");
     }
