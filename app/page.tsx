@@ -115,10 +115,7 @@ export default function LoginPage() {
           >
             {loading ? "Logging in..." : "Log In →"}
           </button>
-        </form>
-
-        
-        
+        </form>        
       </div>
     </div>
   );

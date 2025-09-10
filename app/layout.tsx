@@ -6,8 +6,8 @@ import { AuthProvider } from '@/context/AuthContext';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'HR Admin Panel - Employee Management System',
-  description: 'Complete HR management solution with employee portal and admin dashboard',
+  title: 'Employee Panel ',
+  description: 'A simple employee management system',
 };
 
 export default function RootLayout({
@@ -25,3 +25,9 @@ export default function RootLayout({
     </html>
   );
 }
+
+
+
+
+
+
